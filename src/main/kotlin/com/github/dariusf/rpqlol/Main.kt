@@ -35,16 +35,34 @@ sealed class Expr
 data class Fact(val atom: String, val args: List<Value>) : Expr()
 data class Rule(val head: Fact, val body: List<Value>) : Expr()
 
-class Database(val facts: List<Value> = arrayListOf())
+class Database(val facts: List<Value> = arrayListOf()) {
+  fun query(query: List<Functor>): Sequence<Env> {
+    return runSearch(this, 0, query, Env())
+  }
+}
 
 class UnificationFailure(message: String) : Exception(message)
 
-typealias Env = ImmutableMap<String, Value>
+data class Env(val bindings: ImmutableMap<String, Value> = immutableMapOf()) {
+
+  operator fun get(k: String): Value? = bindings[k]
+  // Assignment can't be an expression, so we don't overload set
+
+  operator fun contains(k: String) = k in bindings
+
+  fun put(k: String, v: Value): Env = Env(bindings.put(k, v))
+
+  constructor(vararg elements: Pair<String, Value>) : this(immutableMapOf(*elements))
+
+  override fun toString(): String {
+    return "Env(${bindings.entries.map { "${it.key}=${it.value}" }.joinToString(", ")})"
+  }
+}
 
 /**
  * Assuming that v is in env, resolves v recursively.
  */
-tailrec fun resolve(env: ImmutableMap<String, Value>, v: Value): Value =
+tailrec fun resolve(env: Env, v: Value): Value =
     when (v) {
       is Var -> {
         val r = env[v.name]
@@ -60,10 +78,10 @@ tailrec fun resolve(env: ImmutableMap<String, Value>, v: Value): Value =
 
 @Throws(UnificationFailure::class)
 fun unify(
-    env: ImmutableMap<String, Value>,
+    env: Env,
     left: Value,
     right: Value
-): ImmutableMap<String, Value> {
+): Env {
 
   val l = resolve(env, left)
   val r = resolve(env, right)
@@ -73,10 +91,8 @@ fun unify(
       // smaller -> larger
       return if (l.name < r.name) {
         env.put(l.name, r)
-  //        env[l.name] = r
       } else {
         env.put(r.name, l)
-  //        env[r.name] = l
       }
     l !is Var && r !is Var ->
       return when {
@@ -85,7 +101,6 @@ fun unify(
         l is Str && r is Str && l.value == r.value ->
           env
         l is Functor && r is Functor && l.name == r.name ->
-//          l.args.zip(r.args).forEach { (l, r) -> unify(env, l, r) }
           l.args.zip(r.args).fold(env) { t, c -> unify(t, c.first, c.second) }
         else ->
           throw UnificationFailure("failed to unify $l and $r")
@@ -97,7 +112,6 @@ fun unify(
         throw UnificationFailure("failed to unify $l and $r")
       } else {
         return env.put(l.name, r)
-//        env[l.name] = r
       }
     else ->
       // Symmetric case
@@ -133,10 +147,6 @@ fun runSearch(
   }
 }
 
-fun query(db: Database, query: List<Functor>): Sequence<Env> {
-  return runSearch(db, 0, query, immutableMapOf())
-}
-
 fun main(args: Array<String>) = runBlocking {
 
   val data = arrayListOf(
@@ -148,7 +158,7 @@ fun main(args: Array<String>) = runBlocking {
   val query = arrayListOf(
       Functor("node", arrayListOf(Var("x"))))
 
-  val query1 = query(db, query)
+  val query1 = db.query(query)
   println(query1.toList())
   println("done")
 

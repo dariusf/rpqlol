@@ -1,12 +1,12 @@
 package com.github.dariusf.rpqlol
 
-import kotlinx.coroutines.runBlocking
+import junit.framework.TestCase.assertEquals
 import org.junit.Test
 
 class BasicTest {
 
   @Test
-  fun test() {
+  fun basicNondeterminism() {
 
     val data = arrayListOf(
         Functor("node", arrayListOf(Num(1))),
@@ -17,14 +17,14 @@ class BasicTest {
     val query = arrayListOf(
         Functor("node", arrayListOf(Var("x")))
     )
-    runBlocking {
-      val query1 = query(db, query)
 
-      val take = query1.take(1).toList()
-      println(take)
+    val query1 = db.query(query)
 
-      val take1 = query1.take(1).toList()
-      println(take1)
-    }
+    val take = query1.toList()
+    val expected = arrayListOf(
+        Env("x" to Num(1)),
+        Env("x" to Num(2))
+    )
+    assertEquals(expected, take)
   }
 }
