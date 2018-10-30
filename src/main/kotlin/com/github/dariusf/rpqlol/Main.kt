@@ -2,6 +2,7 @@ package com.github.dariusf.rpqlol
 
 import com.github.andrewoma.dexx.kollection.ImmutableMap
 import com.github.andrewoma.dexx.kollection.immutableMapOf
+import com.github.andrewoma.dexx.kollection.toImmutableMap
 import kotlinx.coroutines.runBlocking
 import java.util.*
 
@@ -75,6 +76,20 @@ tailrec fun resolve(env: Env, v: Value): Value =
       }
       else -> v
     }
+
+/**
+ * Resolves all bindings in the environment recursively
+ */
+fun resolveAll(env: Env): Env {
+  // dexx's map builder and pair type are too painful to use
+  val env1 = hashMapOf<String, Value>()
+
+  env.bindings.forEach {
+    env1[it.key] = resolve(env, it.value)
+  }
+
+  return Env(env1.toImmutableMap())
+}
 
 @Throws(UnificationFailure::class)
 fun unify(
