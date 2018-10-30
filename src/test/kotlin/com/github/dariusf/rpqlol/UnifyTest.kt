@@ -36,11 +36,13 @@ class UnifyTest {
   }
 
   @Test
-  fun noResolveAll() {
-    assertEquals(Env("a" to Var("b"), "b" to Num(1)),
-        unify(Env(),
-            Functor("a", arrayListOf(Var("a"), Var("a"))),
-            Functor("a", arrayListOf(Var("b"), Num(1)))))
+  fun resolveAll() {
+    val result = unify(Env(),
+        Functor("a", arrayListOf(Var("a"), Var("a"))),
+        Functor("a", arrayListOf(Var("b"), Num(1))))
+
+    assertEquals(Env("a" to Var("b"), "b" to Num(1)), result)
+    assertEquals(Env("a" to Num(1), "b" to Num(1)), resolveAll(result))
   }
 }
 
