@@ -58,6 +58,10 @@ data class Fact(val atom: String, val args: List<Value>) : Expr()
 data class Rule(val head: Fact, val body: List<Value>) : Expr()
 
 class Database(val facts: List<Value> = arrayListOf()) {
+  // Variables are not allowed at the top level?
+  fun query(vararg query: Functor): Sequence<Env> {
+    return query(arrayListOf(*query))
+  }
   fun query(query: List<Functor>): Sequence<Env> {
     return runSearch(this, 0, query, Env())
   }
