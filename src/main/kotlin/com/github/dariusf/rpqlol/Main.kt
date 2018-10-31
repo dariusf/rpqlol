@@ -49,7 +49,9 @@ sealed class Value
 data class Num(val value: Int) : Value()
 data class Str(val value: String) : Value()
 data class Var(val name: String) : Value()
-data class Functor(val name: String, val args: List<Value>) : Value()
+data class Functor(val name: String, val args: List<Value>) : Value() {
+  constructor(name: String, vararg elements: Value) : this(name, arrayListOf(*elements))
+}
 
 sealed class Expr
 data class Fact(val atom: String, val args: List<Value>) : Expr()

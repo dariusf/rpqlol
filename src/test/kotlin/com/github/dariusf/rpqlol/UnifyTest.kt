@@ -28,23 +28,23 @@ class UnifyTest {
   @Test
   fun conflictingVariables() {
     assertTrue(unify(Env(),
-        Functor("a", arrayListOf(Var("x"), Var("x"))),
-        Functor("a", arrayListOf(Num(1), Num(2)))) is Err)
+        Functor("a", Var("x"), Var("x")),
+        Functor("a", Num(1), Num(2))) is Err)
   }
 
   @Test
   fun multipleVariables() {
     assertEquals(Env("x" to Num(1), "y" to Num(1)),
         unify(Env(),
-            Functor("a", arrayListOf(Var("x"), Var("y"))),
-            Functor("a", arrayListOf(Num(1), Var("x")))).unwrap())
+            Functor("a", Var("x"), Var("y")),
+            Functor("a", Num(1), Var("x"))).unwrap())
   }
 
   @Test
   fun resolveAll() {
     val result = unify(Env(),
-        Functor("a", arrayListOf(Var("a"), Var("a"))),
-        Functor("a", arrayListOf(Var("b"), Num(1))))
+        Functor("a", Var("a"), Var("a")),
+        Functor("a", Var("b"), Num(1)))
 
     assertTrue(result is Ok)
 

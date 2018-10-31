@@ -9,13 +9,13 @@ class BasicTest {
   fun basicNondeterminism() {
 
     val data = arrayListOf(
-        Functor("node", arrayListOf(Num(1))),
-        Functor("node", arrayListOf(Num(2)))
+        Functor("node", Num(1)),
+        Functor("node", Num(2))
     )
     val db = Database(data)
 
     val query = arrayListOf(
-        Functor("node", arrayListOf(Var("x")))
+        Functor("node", Var("x"))
     )
 
     val query1 = db.query(query)
