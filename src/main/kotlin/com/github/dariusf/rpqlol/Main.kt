@@ -3,8 +3,27 @@ package com.github.dariusf.rpqlol
 import com.github.andrewoma.dexx.kollection.ImmutableMap
 import com.github.andrewoma.dexx.kollection.immutableMapOf
 import com.github.andrewoma.dexx.kollection.toImmutableMap
+import com.github.michaelbull.result.Err
+import com.github.michaelbull.result.Ok
+import com.github.michaelbull.result.Result
+import com.github.michaelbull.result.unwrap
 import kotlinx.coroutines.runBlocking
 import java.util.*
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.Set
+import kotlin.collections.arrayListOf
+import kotlin.collections.contains
+import kotlin.collections.emptySet
+import kotlin.collections.forEach
+import kotlin.collections.hashMapOf
+import kotlin.collections.hashSetOf
+import kotlin.collections.isNotEmpty
+import kotlin.collections.joinToString
+import kotlin.collections.map
+import kotlin.collections.set
+import kotlin.collections.setOf
+import kotlin.collections.zip
 
 class Graph(val graph: Map<Int, Set<Int>> = hashMapOf())
 
@@ -91,8 +110,20 @@ fun resolveAll(env: Env): Env {
   return Env(env1.toImmutableMap())
 }
 
-@Throws(UnificationFailure::class)
 fun unify(
+    env: Env,
+    left: Value,
+    right: Value
+): Result<Env, String> {
+  return try {
+    Ok(unifyE(env, left, right))
+  } catch (e: UnificationFailure) {
+    Err(e.message!!)
+  }
+}
+
+@Throws(UnificationFailure::class)
+fun unifyE(
     env: Env,
     left: Value,
     right: Value
@@ -116,7 +147,7 @@ fun unify(
         l is Str && r is Str && l.value == r.value ->
           env
         l is Functor && r is Functor && l.name == r.name ->
-          l.args.zip(r.args).fold(env) { t, c -> unify(t, c.first, c.second) }
+          l.args.zip(r.args).fold(env) { t, (l, r) -> unifyE(t, l, r) }
         else ->
           throw UnificationFailure("failed to unify $l and $r")
       }
@@ -130,7 +161,7 @@ fun unify(
       }
     else ->
       // Symmetric case
-      return unify(env, right, left)
+      return unifyE(env, right, left)
   }
 }
 
@@ -151,13 +182,11 @@ fun runSearch(
   } else {
     val qf = query[n]
     for (dbf in db.facts) {
-      val env1 =
-          try {
-            unify(env, qf, dbf)
-          } catch (e: UnificationFailure) {
-            continue
-          }
-      yieldAll(runSearch(db, n + 1, query, env1))
+      val env1 = unify(env, qf, dbf)
+      if (env1 is Err) {
+        continue
+      }
+      yieldAll(runSearch(db, n + 1, query, env1.unwrap()))
     }
   }
 }

@@ -18,6 +18,13 @@
         <enabled>false</enabled>
       </snapshots>
     </repository>
+    <repository>
+      <id>result</id>
+      <url>https://dl.bintray.com/michaelbull/maven</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
   </repositories>
 
   <properties>
@@ -46,6 +53,12 @@
       <groupId>com.github.andrewoma.dexx</groupId>
       <artifactId>kollection</artifactId>
       <version>0.7</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.michael-bull.kotlin-result</groupId>
+      <artifactId>kotlin-result</artifactId>
+      <version>1.1.0</version>
     </dependency>
 
     <dependency>
