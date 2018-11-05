@@ -45,11 +45,18 @@ data class Functor(val name: String, val args: List<Value>) : Value() {
 }
 
 sealed class Expr
+
 data class Fact(val f: Functor) : Expr() {
   override fun toString(): String {
     return "$f"
   }
 }
+/**
+ * There's some overlap in representation here: what is the difference between
+ * a Fact and a Rule with an empty body? For now, it's that variables are instantiated
+ * instantiated during evaluation only in rules. Facts should not contain variables --
+ * the hope is that we can use this to store them in a more optimized format in future.
+ */
 data class Rule(val head: Fact, val body: List<Fact>) : Expr() {
   constructor(head: Fact, vararg body: Fact) : this(head, arrayListOf(*body))
   override fun toString(): String {
@@ -297,7 +304,13 @@ object PGrammar : Grammar<Program>() {
 
   val value: Parser<Value> by functor or primitive
 
-  val fact: Parser<Fact> by (functor and skip(DOT)).map { Fact(it) }
+  val fact: Parser<Expr> by (functor and skip(DOT)).map {
+    if (it.args.any { it is Var }) {
+      Rule(Fact(it))
+    } else {
+      Fact(it)
+    }
+  }
 
   val body: Parser<List<Functor>> by (separatedTerms(parser(this::functor), COMMA, acceptZero = false) and
       skip(DOT))

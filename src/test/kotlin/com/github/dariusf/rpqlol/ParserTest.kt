@@ -8,7 +8,14 @@ class ParserTest {
   @Test
   fun fact() {
     assertEquals(
-        arrayListOf(Fact(Functor("a", Var("X"), Num(1)))),
+        arrayListOf(Fact(Functor("a", Str("b"), Num(1)))),
+        parseProgram("a(b, 1)."))
+  }
+
+  @Test
+  fun factRule() {
+    assertEquals(
+        arrayListOf(Rule(Fact(Functor("a", Var("X"), Num(1))))),
         parseProgram("a(X, 1)."))
   }
 
