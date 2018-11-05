@@ -43,17 +43,39 @@ fun transitiveClosure(db: Graph, a: Int) = sequence {
 }
 
 sealed class Value
-data class Num(val value: Int) : Value()
-data class Str(val value: String) : Value()
-data class Var(val name: String, val ignored: Boolean = false) : Value()
+data class Num(val value: Int) : Value() {
+  override fun toString(): String {
+    return "$value"
+  }
+}
+data class Str(val value: String) : Value() {
+  override fun toString(): String {
+    return value
+  }
+}
+data class Var(val name: String, val ignored: Boolean = false) : Value() {
+  override fun toString(): String {
+    return "${if (ignored) "_" else ""}$name"
+  }
+}
 data class Functor(val name: String, val args: List<Value>) : Value() {
   constructor(name: String, vararg elements: Value) : this(name, arrayListOf(*elements))
+  override fun toString(): String {
+    return "$name(${args.joinToString(", ")})"
+  }
 }
 
 sealed class Expr
-data class Fact(val f: Functor) : Expr()
+data class Fact(val f: Functor) : Expr() {
+  override fun toString(): String {
+    return "$f"
+  }
+}
 data class Rule(val head: Fact, val body: List<Fact>) : Expr() {
   constructor(head: Fact, vararg body: Fact) : this(head, arrayListOf(*body))
+  override fun toString(): String {
+    return "$head :- ${body.joinToString(", ")}."
+  }
 }
 
 typealias Program = List<Expr>
