@@ -21,7 +21,7 @@ class UnifyTest {
 
   @Test
   fun variables() {
-    assertEquals(Env("x" to Num(1)),
+    assertEquals(Env(Var("x" )to Num(1)),
         unify(Env(), Var("x"), Num(1)).unwrap())
   }
 
@@ -34,7 +34,7 @@ class UnifyTest {
 
   @Test
   fun multipleVariables() {
-    assertEquals(Env("x" to Num(1), "y" to Num(1)),
+    assertEquals(Env(Var("x") to Num(1), Var("y") to Num(1)),
         unify(Env(),
             Functor("a", Var("x"), Var("y")),
             Functor("a", Num(1), Var("x"))).unwrap())
@@ -48,8 +48,8 @@ class UnifyTest {
 
     assertTrue(result is Ok)
 
-    assertEquals(Env("a" to Var("b"), "b" to Num(1)), result.unwrap())
-    assertEquals(Env("a" to Num(1), "b" to Num(1)), resolveAll(result.unwrap()))
+    assertEquals(Env(Var("a") to Var("b"), Var("b") to Num(1)), result.unwrap())
+    assertEquals(Env(Var("a") to Num(1), Var("b") to Num(1)), resolveAll(result.unwrap()))
   }
 }
 

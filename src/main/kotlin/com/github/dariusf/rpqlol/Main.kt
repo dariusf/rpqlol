@@ -45,7 +45,7 @@ fun transitiveClosure(db: Graph, a: Int) = sequence {
 sealed class Value
 data class Num(val value: Int) : Value()
 data class Str(val value: String) : Value()
-data class Var(val name: String) : Value()
+data class Var(val name: String, val ignored: Boolean = false) : Value()
 data class Functor(val name: String, val args: List<Value>) : Value() {
   constructor(name: String, vararg elements: Value) : this(name, arrayListOf(*elements))
 }
@@ -97,22 +97,22 @@ class Database(
   }
 
   fun v(): Var {
-    return Var("v${fresh++}")
+    return Var("v${fresh++}", ignored = true)
   }
 }
 
 class UnificationFailure(message: String) : Exception(message)
 
-data class Env(val bindings: ImmutableMap<String, Value> = immutableMapOf()) {
+data class Env(val bindings: ImmutableMap<Var, Value> = immutableMapOf()) {
 
-  operator fun get(k: String): Value? = bindings[k]
+  operator fun get(k: Var): Value? = bindings[k]
   // Assignment can't be an expression, so we don't overload set
 
-  operator fun contains(k: String) = k in bindings
+  operator fun contains(k: Var) = k in bindings
 
-  fun put(k: String, v: Value): Env = Env(bindings.put(k, v))
+  fun put(k: Var, v: Value): Env = Env(bindings.put(k, v))
 
-  constructor(vararg elements: Pair<String, Value>) : this(immutableMapOf(*elements))
+  constructor(vararg elements: Pair<Var, Value>) : this(immutableMapOf(*elements))
 
   override fun toString(): String {
     return "Env(${bindings.entries.map { "${it.key}=${it.value}" }.joinToString(", ")})"
@@ -125,7 +125,7 @@ data class Env(val bindings: ImmutableMap<String, Value> = immutableMapOf()) {
 tailrec fun resolve(env: Env, v: Value): Value =
     when (v) {
       is Var -> {
-        val r = env[v.name]
+        val r = env[v]
         when (r) {
 //          null -> throw Exception("$v not found in environment")
           null -> v
@@ -141,10 +141,12 @@ tailrec fun resolve(env: Env, v: Value): Value =
  */
 fun resolveAll(env: Env): Env {
   // dexx's map builder and pair type are too painful to use
-  val env1 = hashMapOf<String, Value>()
+  val env1 = hashMapOf<Var, Value>()
 
   env.bindings.forEach {
-    env1[it.key] = resolve(env, it.value)
+    if (!it.key.ignored) {
+      env1[it.key] = resolve(env, it.value)
+    }
   }
 
   return Env(env1.toImmutableMap())
@@ -176,9 +178,9 @@ fun unifyE(
     l is Var && r is Var ->
       // smaller -> larger
       return if (l.name < r.name) {
-        env.put(l.name, r)
+        env.put(l, r)
       } else {
-        env.put(r.name, l)
+        env.put(r, l)
       }
     l !is Var && r !is Var ->
       return when {
@@ -192,12 +194,12 @@ fun unifyE(
           throw UnificationFailure("failed to unify $l and $r")
       }
     l is Var ->
-      if (l.name in env && resolve(env, l) != r) {
+      if (l in env && resolve(env, l) != r) {
 //        return Result.failure(Exception("unification failure"))
 //        return null
         throw UnificationFailure("failed to unify $l and $r")
       } else {
-        return env.put(l.name, r)
+        return env.put(l, r)
       }
     else ->
       // Symmetric case

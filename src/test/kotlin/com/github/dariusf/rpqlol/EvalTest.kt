@@ -26,10 +26,10 @@ class EvalTest {
   fun basicNondeterminism() {
     val result = DB.query(Functor("node", Var("x"))).toList()
     val expected = arrayListOf(
-        Env("x" to Num(1)),
-        Env("x" to Num(2)),
-        Env("x" to Num(3)),
-        Env("x" to Num(4))
+        Env(Var("x") to Num(1)),
+        Env(Var("x") to Num(2)),
+        Env(Var("x") to Num(3)),
+        Env(Var("x") to Num(4))
     )
     assertEquals(expected, result)
   }
@@ -41,9 +41,9 @@ class EvalTest {
         Functor("edge", Var("x"), Var("y")),
         Functor("node", Var("y"))).toList()
     val expected = arrayListOf(
-        Env("x" to Num(1), "y" to Num(3)),
-        Env("x" to Num(2), "y" to Num(4)),
-        Env("x" to Num(3), "y" to Num(2))
+        Env(Var("x") to Num(1), Var("y") to Num(3)),
+        Env(Var("x") to Num(2), Var("y") to Num(4)),
+        Env(Var("x") to Num(3), Var("y") to Num(2))
     )
     assertEquals(expected, result)
   }
@@ -52,11 +52,11 @@ class EvalTest {
   fun rules() {
     assertEquals(
         arrayListOf(
-            Env("x" to Num(1)),
-            Env("x" to Num(2)),
-            Env("x" to Num(3)),
-            Env("x" to Num(4))),
-        DB.query(Functor("path", Num(1), Var("x"))).toList()
+            Env(Var("x") to Num(3)),
+            Env(Var("x") to Num(2)),
+            Env(Var("x") to Num(4))),
+        DB.query(Functor("path", Num(1), Var("x")))
+            .map { resolveAll(it) }.toList()
     )
   }
 }
