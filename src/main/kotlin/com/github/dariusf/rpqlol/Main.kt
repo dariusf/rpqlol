@@ -19,28 +19,7 @@ import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.unwrap
 import kotlinx.coroutines.runBlocking
-import java.util.*
 import kotlin.collections.set
-
-class Graph(val graph: Map<Int, Set<Int>> = hashMapOf())
-
-fun transitiveClosure(db: Graph, a: Int) = sequence {
-
-  val stack = Stack<Int>()
-  stack.push(a)
-  val seen = hashSetOf<Int>()
-
-  while (stack.isNotEmpty()) {
-    val elt = stack.pop()
-    if (elt in seen) {
-      continue
-    }
-    seen.add(elt)
-    yield(elt)
-    val neighbours = db.graph[elt] ?: emptySet()
-    neighbours.forEach { stack.push(it) }
-  }
-}
 
 sealed class Value
 data class Num(val value: Int) : Value() {
@@ -353,21 +332,5 @@ fun main(args: Array<String>) = runBlocking {
   val query1 = db.query(query)
   println(query1.toList())
   println("done")
-
-//  graphTest()
 }
 
-private fun graphTest() {
-  val graph = hashMapOf(1 to setOf(2, 3), 2 to setOf(3, 4))
-  val db = Graph(graph)
-
-  println(transitiveClosure(db, 1).take(3).toList())
-
-  val tc = transitiveClosure(db, 1).iterator()
-
-  while (tc.hasNext()) {
-    println("press enter ${tc.next()}")
-    readLine()
-  }
-  println("done")
-}
