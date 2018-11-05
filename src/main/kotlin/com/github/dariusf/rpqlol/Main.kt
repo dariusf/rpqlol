@@ -82,8 +82,17 @@ typealias Program = List<Expr>
 
 fun visitValues(e: Expr, f: (Value) -> Value): Expr {
   return when (e) {
-    is Fact -> Fact(Functor(e.f.name, e.f.args.map(f)))
+    is Fact -> Fact(Functor(e.f.name, e.f.args.map { visitValues(it, f) }))
     is Rule -> Rule(visitValues(e.head, f) as Fact, e.body.map { visitValues(it, f) as Fact })
+  }
+}
+
+fun visitValues(v: Value, f: (Value) -> Value): Value {
+  return when (v) {
+    is Num -> f.invoke(v)
+    is Str -> f.invoke(v)
+    is Var -> f.invoke(v)
+    is Functor -> Functor(v.name, v.args.map { f.invoke(it) })
   }
 }
 
