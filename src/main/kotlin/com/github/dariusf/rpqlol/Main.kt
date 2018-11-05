@@ -54,16 +54,49 @@ data class Functor(val name: String, val args: List<Value>) : Value() {
 }
 
 sealed class Expr
-data class Fact(val atom: String, val args: List<Value>) : Expr()
-data class Rule(val head: Fact, val body: List<Value>) : Expr()
+data class Fact(val f: Functor) : Expr()
+data class Rule(val head: Fact, val body: List<Fact>) : Expr() {
+  constructor(head: Fact, vararg body: Fact) : this(head, arrayListOf(*body))
+}
 
-class Database(val facts: List<Value> = arrayListOf()) {
+fun visitValues(e: Expr, f: (Value) -> Value): Expr {
+  return when (e) {
+    is Fact -> Fact(Functor(e.f.name, e.f.args.map(f)))
+    is Rule -> Rule(visitValues(e.head, f) as Fact, e.body.map { visitValues(it, f) as Fact })
+  }
+}
+
+fun instantiate(db: Database, e: Expr): Expr {
+  // old -> new
+  val bindings: MutableMap<Value, Var> = hashMapOf()
+  return visitValues(e) {
+    when (it) {
+      is Var ->
+        if (it in bindings) {
+          bindings[it]!!
+        } else {
+          val v = db.v()
+          bindings[it] = v
+          v
+        }
+      else -> it
+    }
+  }
+}
+
+class Database(
+    val facts: List<Value> = arrayListOf(),
+    var fresh: Int = 0
+) {
   // Variables are not allowed at the top level?
   fun query(vararg query: Functor): Sequence<Env> {
     return query(arrayListOf(*query))
   }
   fun query(query: List<Functor>): Sequence<Env> {
     return runSearch(this, 0, query, Env())
+  }
+  fun v(): Var {
+    return Var("v${fresh++}")
   }
 }
 

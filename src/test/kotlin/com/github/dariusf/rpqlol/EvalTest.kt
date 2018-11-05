@@ -3,7 +3,7 @@ package com.github.dariusf.rpqlol
 import junit.framework.TestCase.assertEquals
 import org.junit.Test
 
-class BasicTest {
+class EvalTest {
 
   val DB = Database(arrayListOf(
       Functor("node", Num(1)),
