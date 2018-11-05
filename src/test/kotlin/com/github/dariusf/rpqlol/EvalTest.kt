@@ -74,4 +74,30 @@ class EvalTest {
             .map { resolveAll(it) }.toList()
     )
   }
+
+  @Test
+  fun computation() {
+    val database = Database("""
+      append(nil, Y, Y).
+      append(cons(X, Xs), Y, cons(X, Z)) :- append(Xs, Y, Z).
+    """)
+
+    val query = database.query("append(cons(1, nil), cons(2, cons(3, nil)), Z).")
+
+    assertEquals(arrayListOf(
+        Env(Var("Z") to
+            Functor("cons", Num(1), Functor("cons", Num(2), Functor("cons", Num(3), Str("nil")))))),
+        query.toList().map { resolveAll(it) })
+
+    val query1 = database.query("append(cons(1, nil), Z, cons(1, cons(2, nil))).")
+
+    assertEquals(arrayListOf(
+        Env(Var("Z") to
+            Functor("cons", Num(2), Str("nil")))),
+        query1.toList().map { resolveAll(it) })
+
+    val query2 = database.query("append(X, Y, Z).")
+
+    query2.take(3).map { resolveAll(it) }.toList()
+  }
 }
