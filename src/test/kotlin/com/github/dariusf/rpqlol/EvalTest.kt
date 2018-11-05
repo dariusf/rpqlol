@@ -5,22 +5,37 @@ import org.junit.Test
 
 class EvalTest {
 
-  val DB = Database(arrayListOf(
-      Fact(Functor("node", Num(1))),
-      Fact(Functor("node", Num(2))),
-      Fact(Functor("node", Num(3))),
-      Fact(Functor("node", Num(4))),
-      Fact(Functor("edge", Num(1), Num(3))),
-      Fact(Functor("edge", Num(2), Num(4))),
-      Fact(Functor("edge", Num(3), Num(2))),
-      Rule(
-          Fact(Functor("path", Var("x"), Var("y"))),
-          Fact(Functor("edge", Var("x"), Var("y")))),
-      Rule(
-          Fact(Functor("path", Var("x"), Var("z"))),
-          Fact(Functor("edge", Var("x"), Var("y"))),
-          Fact(Functor("path", Var("y"), Var("z"))))
-  ))
+  val DB = Database("""
+        node(1).
+        node(2).
+        node(3).
+        node(4).
+        edge(1, 3).
+        edge(2, 4).
+        edge(3, 2).
+        path(X, Y) :- edge(X, Y).
+        path(X, Z) :- edge(X, Y), path(Y, Z).
+      """)
+
+  @Test
+  fun dbFromProgram() {
+    assertEquals(DB,
+        Database(arrayListOf(
+            Fact(Functor("node", Num(1))),
+            Fact(Functor("node", Num(2))),
+            Fact(Functor("node", Num(3))),
+            Fact(Functor("node", Num(4))),
+            Fact(Functor("edge", Num(1), Num(3))),
+            Fact(Functor("edge", Num(2), Num(4))),
+            Fact(Functor("edge", Num(3), Num(2))),
+            Rule(
+                Fact(Functor("path", Var("X"), Var("Y"))),
+                Fact(Functor("edge", Var("X"), Var("Y")))),
+            Rule(
+                Fact(Functor("path", Var("X"), Var("Z"))),
+                Fact(Functor("edge", Var("X"), Var("Y"))),
+                Fact(Functor("path", Var("Y"), Var("Z")))))))
+  }
 
   @Test
   fun basicNondeterminism() {

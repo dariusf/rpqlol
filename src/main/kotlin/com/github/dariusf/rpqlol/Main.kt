@@ -105,10 +105,12 @@ fun instantiate(db: Database, e: Expr): Expr {
   }
 }
 
-class Database(
+data class Database(
     val data: List<Expr> = arrayListOf(),
     var fresh: Int = 0
 ) {
+  constructor(query: String) : this(parseProgram(query), 0)
+
   // Variables are not allowed at the top level?
   fun query(vararg query: Functor): Sequence<Env> {
     return query(arrayListOf(*query))
@@ -116,6 +118,10 @@ class Database(
 
   fun query(query: List<Functor>): Sequence<Env> {
     return runSearch(this, 0, query, Env())
+  }
+
+  fun query(query: String): Sequence<Env> {
+    return runSearch(this, 0, parseQuery(query), Env())
   }
 
   fun v(): Var {
@@ -320,8 +326,8 @@ fun parseQuery(text: String): List<Functor> = PGrammar.body.parseToEnd(PGrammar.
 fun main(args: Array<String>) = runBlocking {
 
   val data = arrayListOf(
-      Fact(Functor("node", arrayListOf(Num(1)))),
-      Fact(Functor("node", arrayListOf(Num(2)))))
+      Fact(Functor("node", Num(1))),
+      Fact(Functor("node", Num(2))))
 
   val db = Database(data)
 
