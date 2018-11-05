@@ -84,7 +84,7 @@ fun instantiate(db: Database, e: Expr): Expr {
 }
 
 class Database(
-    val facts: List<Value> = arrayListOf(),
+    val data: List<Expr> = arrayListOf(),
     var fresh: Int = 0
 ) {
   // Variables are not allowed at the top level?
@@ -221,12 +221,24 @@ fun runSearch(
     yield(env)
   } else {
     val qf = query[n]
-    for (dbf in db.facts) {
-      val env1 = unify(env, qf, dbf)
-      if (env1 is Err) {
-        continue
+    l@ for (dbd in db.data) {
+      when (dbd) {
+        is Fact -> {
+          val env1 = unify(env, qf, dbd.f)
+          if (env1 is Err) {
+            continue@l
+          }
+          yieldAll(runSearch(db, n + 1, query, env1.unwrap()))
+        }
+        is Rule -> {
+          val rule = instantiate(db, dbd) as Rule
+          val env1 = unify(env, qf, rule.head.f)
+          if (env1 is Err) {
+            continue@l
+          }
+          yieldAll(runSearch(db, 0, rule.body.map { it.f }, env1.unwrap()))
+        }
       }
-      yieldAll(runSearch(db, n + 1, query, env1.unwrap()))
     }
   }
 }
@@ -284,8 +296,8 @@ fun parseQuery(text: String): List<Functor> = PGrammar.body.parseToEnd(PGrammar.
 fun main(args: Array<String>) = runBlocking {
 
   val data = arrayListOf(
-      Functor("node", arrayListOf(Num(1))),
-      Functor("node", arrayListOf(Num(2))))
+      Fact(Functor("node", arrayListOf(Num(1)))),
+      Fact(Functor("node", arrayListOf(Num(2)))))
 
   val db = Database(data)
 
