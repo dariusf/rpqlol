@@ -27,6 +27,12 @@ data class Num(val value: Int) : Value() {
     return "$value"
   }
 }
+
+/**
+ * There's overlap here between a Str and a Functor with an empty parameter list.
+ * For now, the former is produced by the current parser implementation, but there's
+ * no real semantic difference.
+ */
 data class Str(val value: String) : Value() {
   override fun toString(): String {
     return value
