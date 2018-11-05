@@ -79,7 +79,7 @@ fun visitValues(e: Expr, f: (Value) -> Value): Expr {
   }
 }
 
-fun visitValues(v: Value, f: (Value) -> Value): Value {
+inline fun visitValues(v: Value, f: (Value) -> Value): Value {
   return when (v) {
     is Num -> f.invoke(v)
     is Str -> f.invoke(v)
