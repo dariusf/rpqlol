@@ -19,6 +19,13 @@
       </snapshots>
     </repository>
     <repository>
+      <id>better-parse</id>
+      <url>https://jcenter.bintray.com</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+    <repository>
       <id>result</id>
       <url>https://dl.bintray.com/michaelbull/maven</url>
       <snapshots>
@@ -59,6 +66,12 @@
       <groupId>com.michael-bull.kotlin-result</groupId>
       <artifactId>kotlin-result</artifactId>
       <version>1.1.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.h0tk3y.betterParse</groupId>
+      <artifactId>better-parse</artifactId>
+      <version>0.3.4</version>
     </dependency>
 
     <dependency>

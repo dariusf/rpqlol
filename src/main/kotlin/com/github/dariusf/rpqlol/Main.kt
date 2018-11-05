@@ -3,27 +3,24 @@ package com.github.dariusf.rpqlol
 import com.github.andrewoma.dexx.kollection.ImmutableMap
 import com.github.andrewoma.dexx.kollection.immutableMapOf
 import com.github.andrewoma.dexx.kollection.toImmutableMap
+import com.github.h0tk3y.betterParse.combinators.and
+import com.github.h0tk3y.betterParse.combinators.map
+import com.github.h0tk3y.betterParse.combinators.oneOrMore
+import com.github.h0tk3y.betterParse.combinators.or
+import com.github.h0tk3y.betterParse.combinators.separatedTerms
+import com.github.h0tk3y.betterParse.combinators.skip
+import com.github.h0tk3y.betterParse.grammar.Grammar
+import com.github.h0tk3y.betterParse.grammar.parseToEnd
+import com.github.h0tk3y.betterParse.grammar.parser
+import com.github.h0tk3y.betterParse.parser.Parser
+import com.github.h0tk3y.betterParse.parser.parseToEnd
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.unwrap
 import kotlinx.coroutines.runBlocking
 import java.util.*
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.Set
-import kotlin.collections.arrayListOf
-import kotlin.collections.contains
-import kotlin.collections.emptySet
-import kotlin.collections.forEach
-import kotlin.collections.hashMapOf
-import kotlin.collections.hashSetOf
-import kotlin.collections.isNotEmpty
-import kotlin.collections.joinToString
-import kotlin.collections.map
 import kotlin.collections.set
-import kotlin.collections.setOf
-import kotlin.collections.zip
 
 class Graph(val graph: Map<Int, Set<Int>> = hashMapOf())
 
@@ -59,6 +56,8 @@ data class Rule(val head: Fact, val body: List<Fact>) : Expr() {
   constructor(head: Fact, vararg body: Fact) : this(head, arrayListOf(*body))
 }
 
+typealias Program = List<Expr>
+
 fun visitValues(e: Expr, f: (Value) -> Value): Expr {
   return when (e) {
     is Fact -> Fact(Functor(e.f.name, e.f.args.map(f)))
@@ -92,9 +91,11 @@ class Database(
   fun query(vararg query: Functor): Sequence<Env> {
     return query(arrayListOf(*query))
   }
+
   fun query(query: List<Functor>): Sequence<Env> {
     return runSearch(this, 0, query, Env())
   }
+
   fun v(): Var {
     return Var("v${fresh++}")
   }
@@ -229,6 +230,56 @@ fun runSearch(
     }
   }
 }
+
+object PGrammar : Grammar<Program>() {
+
+  private val IDENT by token("[a-z]\\w*")
+  private val VAR by token("[A-Za-z]\\w*")
+  private val NUM by token("[0-9]+")
+  private val LPAREN by token("\\(")
+  private val RPAREN by token("\\)")
+  private val DOT by token("\\.")
+  private val COMMA by token(",")
+  private val IMPLIES by token(":-")
+
+  private val WS by token("\\s+", ignore = true)
+  private val NEWLINE by token("[\r\n]+", ignore = true)
+
+  val num: Parser<Num> by NUM.map { Num(Integer.parseInt(it.text)) }
+  val atom: Parser<Str> by IDENT.map { Str(it.text) }
+  val variable: Parser<Var> by VAR.map { Var(it.text) }
+
+  val primitive: Parser<Value> by num or atom or variable
+
+  val functor: Parser<Functor> by (IDENT and skip(LPAREN) and
+      separatedTerms(parser(this::value), COMMA, acceptZero = false) and
+      skip(RPAREN))
+      .map { (name, args) ->
+        Functor(name.text, args)
+      }
+
+  val value: Parser<Value> by functor or primitive
+
+  val fact: Parser<Fact> by (functor and skip(DOT)).map { Fact(it) }
+
+  val body: Parser<List<Functor>> by (separatedTerms(parser(this::functor), COMMA, acceptZero = false) and
+      skip(DOT))
+
+  val rule: Parser<Rule> by (functor and skip(IMPLIES) and body)
+      .map { (head, body) ->
+        Rule(Fact(head), body.map { Fact(it) })
+      }
+
+  val decl: Parser<Expr> by rule or fact
+
+  val program: Parser<Program> by oneOrMore(decl)
+
+  override val rootParser: Parser<Program> by program
+}
+
+fun parseProgram(text: String): Program = PGrammar.parseToEnd(text)
+
+fun parseQuery(text: String): List<Functor> = PGrammar.body.parseToEnd(PGrammar.tokenizer.tokenize(text))
 
 fun main(args: Array<String>) = runBlocking {
 
