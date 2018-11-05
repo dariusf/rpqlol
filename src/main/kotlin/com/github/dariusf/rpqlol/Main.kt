@@ -180,9 +180,16 @@ fun resolveAll(env: Env): Env {
   // dexx's map builder and pair type are too painful to use
   val env1 = hashMapOf<Var, Value>()
 
-  env.bindings.forEach {
-    if (!it.key.ignored) {
-      env1[it.key] = resolve(env, it.value)
+  env.bindings.forEach { binding ->
+    if (!binding.key.ignored) {
+      val resolvedInEnv = resolve(env, binding.value)
+      val resolvedVarsWithin = visitValues(resolvedInEnv) {
+        when (it) {
+          is Var -> resolve(env, it)
+          else -> it
+        }
+      }
+      env1[binding.key] = resolvedVarsWithin
     }
   }
 
